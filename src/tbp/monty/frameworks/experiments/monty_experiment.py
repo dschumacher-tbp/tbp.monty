@@ -440,12 +440,6 @@ class MontyExperiment:
             self.model.reset()
         self.model.set_experiment_mode(self.experiment_mode)
 
-    def run_episode(self):
-        """Runs an episode with `pre_episode` and `post_episode` hooks."""
-        self.pre_episode()
-        last_step = self.run_episode_steps()
-        self.post_episode(last_step)
-
     def pre_episode(self) -> None:
         """Call pre_episode on elements in experiment and set mode."""
         if self.experiment_mode is ExperimentMode.TRAIN:
@@ -474,6 +468,12 @@ class MontyExperiment:
         if self.show_sensor_output:
             self.live_plotter.initialize_online_plotting()
 
+    def run_episode(self):
+        """Runs an episode with `pre_episode` and `post_episode` hooks."""
+        self.pre_episode()
+        step = self.run_episode_steps()
+        self.post_episode(step)
+
     def run_episode_steps(self) -> int:
         """Runs the steps of an episode.
 
@@ -487,22 +487,9 @@ class MontyExperiment:
         step = 0
         ctx = RuntimeContext(rng=self.rng)
         actions: list[Action] = []
-
         while not self._recognition_complete(step):
-            observations, proprioceptive_state = self.env_interface.step(actions)
-
-            self._fixme_generate_live_plot_frame(observations, step)
-
             try:
-                actions = self.model.step(ctx, observations, proprioceptive_state)
-                actions = self._step_hook(
-                    ctx,
-                    self.model,
-                    self.supervised_lm_ids if self.supervised_lm_ids else [],
-                    step,
-                    observations,
-                    actions,
-                )
+                self.run_step(ctx, step, actions)
             except StopIteration:
                 # TODO: StopIteration is being thrown by NaiveScanPolicy to signal
                 #       episode termination. This is a holdover from when we used
@@ -513,10 +500,30 @@ class MontyExperiment:
                 #       so the experiment can set max steps based on that knowledge
                 #       alone.
                 break
-
             step += 1
-
         return step
+
+    def run_step(self, ctx: RuntimeContext, step: int, actions: list[Action]) -> None:
+        """Runs a single step."""
+        observations, proprioceptive_state = self.env_interface.step(actions)
+
+        self._fixme_generate_live_plot_frame(observations, step)
+
+        if self.model.is_motor_only_step:
+            logger.debug("Performing a motor-only step")
+            actions = self.model.motor_only_step(
+                ctx, observations, proprioceptive_state
+            )
+        else:
+            actions = self.model.step(ctx, observations, proprioceptive_state)
+            actions = self._step_hook(
+                ctx,
+                self.model,
+                self.supervised_lm_ids if self.supervised_lm_ids else [],
+                step,
+                observations,
+                actions,
+            )
 
     def _recognition_complete(self, step: int) -> bool:
         rc = RecognitionCounter(step=step, max_steps=self.max_steps)
