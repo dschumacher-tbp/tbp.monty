@@ -489,7 +489,7 @@ class MontyExperiment:
         actions: list[Action] = []
         while not self._recognition_complete(step):
             try:
-                self.run_step(ctx, step, actions)
+                actions = self.run_step(ctx, step, actions)
             except StopIteration:
                 # TODO: StopIteration is being thrown by NaiveScanPolicy to signal
                 #       episode termination. This is a holdover from when we used
@@ -503,8 +503,19 @@ class MontyExperiment:
             step += 1
         return step
 
-    def run_step(self, ctx: RuntimeContext, step: int, actions: list[Action]) -> None:
-        """Runs a single step."""
+    def run_step(
+        self, ctx: RuntimeContext, step: int, actions: list[Action]
+    ) -> list[Action]:
+        """Runs a single step.
+
+        Args:
+            ctx: The runtime context.
+            step: The index of the step within the episode.
+            actions: The actions to take in the environment before observing.
+
+        Returns:
+            The actions to take in the environment at the next step.
+        """
         observations, proprioceptive_state = self.env_interface.step(actions)
 
         self._fixme_generate_live_plot_frame(observations, step)
@@ -524,6 +535,7 @@ class MontyExperiment:
                 observations,
                 actions,
             )
+        return actions
 
     def _recognition_complete(self, step: int) -> bool:
         rc = RecognitionCounter(step=step, max_steps=self.max_steps)

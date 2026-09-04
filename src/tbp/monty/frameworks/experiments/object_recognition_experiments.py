@@ -47,7 +47,9 @@ class MontyObjectRecognitionExperiment(MontyExperiment):
         else:
             self.model.fixme_set_ground_truth(self.env_interface.primary_target)
 
-    def run_step(self, ctx: RuntimeContext, step: int, actions: list[Action]) -> None:
+    def run_step(
+        self, ctx: RuntimeContext, step: int, actions: list[Action]
+    ) -> list[Action]:
         observations, proprioceptive_state = self.env_interface.step(actions)
 
         self._fixme_generate_live_plot_frame(observations, step)
@@ -78,3 +80,4 @@ class MontyObjectRecognitionExperiment(MontyExperiment):
                 observations,
                 actions,
             )
+        return actions
