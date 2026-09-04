@@ -8,8 +8,8 @@
 # https://opensource.org/licenses/MIT.
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from typing import Protocol
 
 from typing_extensions import Self
@@ -182,7 +182,9 @@ class NaiveScan(RecognitionPolicy):
         self._max_steps = min(max_total_steps, max_scan_steps)
 
     def __call__(
-        self: Self, model: MontyBase, count: RecognitionCounter  # noqa: ARG002
+        self: Self,
+        model: MontyBase,
+        count: RecognitionCounter,  # noqa: ARG002
     ) -> RecognitionResult:
         is_done = count.step >= self._max_steps
         return RecognitionResult(is_done=is_done)

@@ -187,7 +187,7 @@ class NaiveScanTest(unittest.TestCase):
 
     @given(step=st.integers(min_value=0))
     def test_fixed_amount_5_yields_307_steps(self, step: int) -> None:
-        model = _model_is_done(False)
+        model = _model_is_done(is_done=False)
         policy = NaiveScan(max_total_steps=500, fixed_amount=5)
         count = RecognitionCounter(step=step, max_steps=0)
         result = policy(model, count)
