@@ -158,7 +158,7 @@ class MaxTotalSteps(RecognitionPolicy):
 class NaiveScan(RecognitionPolicy):
     """`count.steps >= count.max_total_steps` or `Stop Iteration` from Naive Scan."""
 
-    _max_steps: int
+    _step_limit: int
     """The maximum number of steps before terminating the episode."""
 
     def __init__(self: Self, max_total_steps: int, fixed_amount: int) -> None:
@@ -179,12 +179,12 @@ class NaiveScan(RecognitionPolicy):
         k = math.ceil(90 / fixed_amount)  # arm length when angular extent >= 90
         max_scan_steps = k * (k - 1) + 1  # 0 when k <= 1 (i.e.: fixed_amount >= 90)
 
-        self._max_steps = min(max_total_steps, max_scan_steps)
+        self._step_limit = min(max_total_steps, max_scan_steps)
 
     def __call__(
         self: Self,
-        model: MontyBase,
-        count: RecognitionCounter,  # noqa: ARG002
+        model: MontyBase,  # noqa: ARG002
+        count: RecognitionCounter,
     ) -> RecognitionResult:
-        is_done = count.step >= self._max_steps
+        is_done = count.step >= self._step_limit
         return RecognitionResult(is_done=is_done)
