@@ -193,3 +193,11 @@ class NaiveScanTest(unittest.TestCase):
         result = policy(model, count)
         is_done = step >= 307
         self.assertEqual(result.is_done, is_done)
+
+    @given(is_done=st.booleans(), step=st.integers(min_value=0, max_value=306))
+    def test_defers_to_model_before_step_limit(self, is_done: bool, step: int) -> None:
+        model = _model_is_done(is_done)
+        policy = NaiveScan(max_total_steps=500, fixed_amount=5)
+        count = RecognitionCounter(step=step, max_steps=0)
+        result = policy(model, count)
+        self.assertEqual(result.is_done, is_done)

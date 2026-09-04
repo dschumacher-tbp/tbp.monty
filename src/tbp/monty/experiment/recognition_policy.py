@@ -156,7 +156,11 @@ class MaxTotalSteps(RecognitionPolicy):
 
 
 class NaiveScan(RecognitionPolicy):
-    """`count.steps >= count.max_total_steps` or `Stop Iteration` from Naive Scan."""
+    """`count.steps >= count.max_total_steps` or `model.is_done`.
+
+    The step limit also accounts for the number of steps the Naive Scan motor policy
+    takes before its spiral completes.
+    """
 
     _step_limit: int
     """The maximum number of steps before terminating the episode."""
@@ -182,9 +186,9 @@ class NaiveScan(RecognitionPolicy):
         self._step_limit = min(max_total_steps, max_scan_steps)
 
     def __call__(
-        self: Self,
-        model: MontyBase,  # noqa: ARG002
-        count: RecognitionCounter,
+        self: Self, model: MontyBase, count: RecognitionCounter
     ) -> RecognitionResult:
-        is_done = count.step >= self._step_limit
-        return RecognitionResult(is_done=is_done)
+        if count.step >= self._step_limit:
+            return RecognitionResult(is_done=True)
+
+        return RecognitionResult(is_done=model.is_done)
